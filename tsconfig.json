@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "declaration": false,
+    "noEmit": false,
+    "strict": true,
+    "types": ["jest", "node"]
+  },
+  "include": ["src", "tests"]
+}
