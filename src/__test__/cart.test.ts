@@ -1,37 +1,56 @@
 import Cart from '../Cart';
 import Buyable from '../Buyable';
 
-describe('Cart', () => {
+describe('Cart with multiple quantities', () => {
   let cart: Cart;
-  const item1: Buyable = { id: 1, name: 'Item 1', price: 100 };
-  const item2: Buyable = { id: 2, name: 'Item 2', price: 200 };
-  const item3: Buyable = { id: 3, name: 'Item 3', price: 300 };
+  const item1: Buyable = { id: 1, name: 'Book', price: 10 }; // только один экземпляр
+  const item2: Buyable = { id: 2, name: 'Smartphone', price: 500 }; // многоэкземплярный
 
   beforeEach(() => {
     cart = new Cart();
-    cart.add(item1);
+  });
+
+  test('добавление одного и того же элемента несколько раз не увеличивает его количество', () => {
+    cart.add(item1, false); // allowMultiple = false
+    cart.add(item1, false);
+    expect(cart.getAll().length).toBe(1);
+  });
+
+  test('добавление элемента с несколькими экземплярами увеличивает количество', () => {
     cart.add(item2);
-    cart.add(item3);
-  });
-
-  test('calculate total price without discount', () => {
-    expect(cart.getTotalPrice()).toBe(600);
-  });
-
-  test('calculate total price with discount', () => {
-    expect(cart.getTotalPriceWithDiscount(0.1)).toBeCloseTo(540); // 10% скидка
-  });
-
-  test('remove item by id', () => {
-    cart.removeById(2);
-    const remainingItems = cart.getAll();
-    expect(remainingItems.length).toBe(2);
-    expect(remainingItems.some(item => item.id === 2)).toBe(false);
-  });
-
-  test('getAll returns a copy of items', () => {
+    cart.add(item2);
     const items = cart.getAll();
-    items.push({ id: 999, name: 'Fake', price: 999 });
-    expect(cart.getAll().length).toBe(3); // оригинальный массив не изменился
+    expect(items.length).toBe(1);
+    expect(items[0].quantity).toBe(2);
   });
+
+  test('уменьшение количества уменьшает счёт или удаляет элемент', () => {
+    cart.add(item2);
+    cart.add(item2);
+    cart.decreaseQuantity(item2.id);
+    expect(cart.getAll()[0].quantity).toBe(1);
+    cart.decreaseQuantity(item2.id);
+    expect(cart.getAll().length).toBe(0);
+  });
+
+  test('общая стоимость рассчитана верно с учётом количества', () => {
+    cart.add(item1); // quantity 1
+    cart.add(item2); // quantity 1
+    cart.add(item2); // now quantity 2
+    expect(cart.getTotalPrice()).toBe(10 + 500 * 2); // 1010
+  });
+
+  test('расчет стоимости с учетом скидки', () => {
+  cart.add(item1); // quantity 1
+  cart.add(item2); // quantity 1
+  cart.add(item2); // quantity 2
+
+  const totalWithoutDiscount = cart.getTotalPrice(); // ожидается 10 + 500*2 = 1010
+  const discount = 0.2; // 20%
+
+  const totalWithDiscount = cart.getTotalPriceWithDiscount(discount);
+  const expectedTotal = totalWithoutDiscount * (1 - discount); // 1010 * 0.8 = 808
+
+  expect(totalWithDiscount).toBeCloseTo(expectedTotal);
+});
 });
